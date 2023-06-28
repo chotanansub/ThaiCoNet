@@ -1,6 +1,7 @@
 import subprocess
 
 def install_packages():
+    subprocess.check_call(['pip', 'install', '--upgrade', 'pip'])
     subprocess.check_call(['pip', 'install', '--upgrade', 'setuptools', 'wheel'])
     subprocess.check_call(['pip', 'install', 'tltk==1.6.8', '-q'])
     subprocess.check_call(['pip', 'install', 'pythainlp==4.0.2', '-q'])
