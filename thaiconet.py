@@ -70,7 +70,7 @@ def tltk_tokenize_pos(text): #Primaly Tokenizer
 
 def pythainlp_tokenize_pos(text): #Secondary Tokenizer
   wordList= word_tokenize(text, keep_whitespace=False)
-  posList = pos_tag(wordList)
+  posList = pos_tag(wordList,corpus='pud')
   return posList
 
 
@@ -108,7 +108,7 @@ def text_preprocess(text: str, stopwords=set(),tokenizer="tltk", pos_target=None
       term_pairs = tltk_tokenize_pos(text)
 
     elif tokenizer == "pythainlp":
-      if pos_target is None: pos_target = {"NCMN","VACT"}
+      if pos_target is None: pos_target = {"NOUN","VERB"}
       term_pairs = pythainlp_tokenize_pos(text)
 
     regex = re.compile('[@_!#$%^&*()<>?/\|}{~:.]')
