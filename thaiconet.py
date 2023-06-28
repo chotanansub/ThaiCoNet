@@ -173,7 +173,7 @@ def bgs_filter_extreme(bgs_list, min_percent=0.1, max_percent=0.8):
 """## Visualization"""
 
 def visualize_cooccurrence(data, fileName):
-    net = Network(height="800px", width="100%", notebook=True)
+    net = Network(height="800px", width="100%", notebook=True, select_menu=True)
 
     # Create a dictionary to store the degree of each node
     node_degrees = {}
@@ -189,14 +189,21 @@ def visualize_cooccurrence(data, fileName):
 
     # Add nodes and set their size based on the degree
     for node, degree in node_degrees.items():
-        net.add_node(node, color="lightblue", size=min(degree * 10, 80))
+        net.add_node(node, color="lightblue", size=min(degree * 10, 80), stroke='black', stroke_width=1)
 
     # Add edges
     for pair, freq in data:
         term1, term2 = pair
         net.add_edge(term1, term2, value=freq, color="orange")
 
+    # Set text size based on node size
+    net.set_node_font_size_from_size()
+
+    # Apply force atlas 2-based layout to avoid node overlap
+    net.force_atlas_2based()
+
     net.show(fileName)
+
 
 
 
