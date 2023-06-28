@@ -169,9 +169,6 @@ def bgs_filter_extreme(bgs_list, min_percent=0.1, max_percent=0.8):
   result = [(pair, count) for pair, count in bgs_list if min_freq <= count <= max_freq and pair[0] != pair[1]]
   return result
 
-filtered_cooc = bgs_filter_extreme(cooc_freqs)
-
-filtered_cooc[:10]
 
 """## Visualization"""
 
