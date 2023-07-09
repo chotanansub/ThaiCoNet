@@ -92,7 +92,7 @@ __is_ipython_kernel__ = lambda: True if 'ipykernel' in sys.modules else False
 
 #sample data
 if __is_ipython_kernel__:
-  !wget https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv -q
+  #!wget https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv -q
 
 """### Data Preprocessing"""
 
