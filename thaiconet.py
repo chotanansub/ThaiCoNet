@@ -85,14 +85,24 @@ from operator import itemgetter
 from collections import Counter,defaultdict
 import re
 import sys
+import os
+import requests
 
 __is_ipython_kernel__ = lambda: True if 'ipykernel' in sys.modules else False
 
 """Sample Resources prepararion"""
 
 #sample data
+def download_data(url, file_name=None):
+    if file_name is None:
+        file_name = url.split('/')[-1]
+    response = requests.get(url)
+    with open(file_name, "wb") as file:
+        file.write(response.content)
+
 if __is_ipython_kernel__:
-  #!wget https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv -q
+    url = "https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv"
+    download_data(url=url)
 
 """### Data Preprocessing"""
 
@@ -184,6 +194,7 @@ def pos_filter(pos_pairs: list, stopwords: set, keep_pos=['NOUN','VERB']):
   filtered_pairs = [(term,pos) for term, pos in pos_pairs
               if pos in keep_pos
               and term not in stopwords
+              and len(term) > 1
               and not isEnglish(term)
               and regex.search(term) is None
               and "\xa0" not in term]
