@@ -88,7 +88,7 @@ import sys
 import os
 import requests
 
-__is_ipython_kernel__ = lambda: True if 'ipykernel' in sys.modules else False
+__is_ipython_kernel__ = lambda: True if 'ipykernel' in sys.modules and __name__ == "__main__" else False
 
 """Sample Resources prepararion"""
 
