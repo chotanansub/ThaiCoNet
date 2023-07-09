@@ -100,9 +100,9 @@ def download_data(url, file_name=None):
     with open(file_name, "wb") as file:
         file.write(response.content)
 
-if __is_ipython_kernel__:
-    url = "https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv"
-    download_data(url=url)
+# if __is_ipython_kernel__:
+#     url = "https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv"
+#     download_data(url=url)
 
 """### Data Preprocessing"""
 
@@ -219,19 +219,19 @@ def feed_preprocess(docs: list, stopwords = None, tokenizer="pythainlp", keep_po
 
 """Tokenization & Term Filtering"""
 
-if __is_ipython_kernel__:
-  news_df = pd.read_csv("thai_electronic_news_2022.csv")
-  news_df
+# if __is_ipython_kernel__:
+#   news_df = pd.read_csv("thai_electronic_news_2022.csv")
+#   news_df
 
-if __is_ipython_kernel__:
-  tokenized_data = feed_preprocess(news_df["content"],tokenizer="pythainlp") #approximate time ~5 min
+# if __is_ipython_kernel__:
+#   tokenized_data = feed_preprocess(news_df["content"],tokenizer="pythainlp") #approximate time ~5 min
 
-if __is_ipython_kernel__:
-  tokenized_data[0][:10] , tokenized_data[1][:10]
+# if __is_ipython_kernel__:
+#   tokenized_data[0][:10] , tokenized_data[1][:10]
 
-if __is_ipython_kernel__:
-  tokenized_freq = count_word_pos_frequency(tokenized_data)
-  tokenized_freq[:15]
+# if __is_ipython_kernel__:
+#   tokenized_freq = count_word_pos_frequency(tokenized_data)
+#   tokenized_freq[:15]
 
 """generate bag of co-occurence terminology"""
 
@@ -265,13 +265,13 @@ def count_triple_frequency(triples):
     result = list(triple_frequency.items())
     return  sorted(result, key=lambda x: x[1], reverse=True)
 
-if __is_ipython_kernel__:
-  cooc_data = generate_trigrams(tokenized_data)
-  cooc_data[:10]
+# if __is_ipython_kernel__:
+#   cooc_data = generate_trigrams(tokenized_data)
+#   cooc_data[:10]
 
-if __is_ipython_kernel__:
-  cooc_freqs = count_triple_frequency(cooc_data)
-  cooc_freqs[:10]
+# if __is_ipython_kernel__:
+#   cooc_freqs = count_triple_frequency(cooc_data)
+#   cooc_freqs[:10]
 
 def filter_pos_triples(data,keeps = [('NOUN','VERB','NOUN')]):
     filtered_triples = [ pair
@@ -280,9 +280,9 @@ def filter_pos_triples(data,keeps = [('NOUN','VERB','NOUN')]):
     ]
     return filtered_triples
 
-if __is_ipython_kernel__:
-  filtered_cooc = filter_pos_triples(cooc_freqs)
-  filtered_cooc[:20]
+# if __is_ipython_kernel__:
+#   filtered_cooc = filter_pos_triples(cooc_freqs)
+#   filtered_cooc[:20]
 
 def bgs_filter_extreme(bgs_list, min_percent=0.05, max_percent=0.8):
   result = list()
@@ -338,7 +338,7 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
 
     net.show(file_name)
 
-if __is_ipython_kernel__:
-  visualize_cooccurrence(filtered_cooc[100:200])
-  display(HTML("thaiconet_result.html"))
+# if __is_ipython_kernel__:
+#   visualize_cooccurrence(filtered_cooc[100:200])
+#   display(HTML("thaiconet_result.html"))
 
