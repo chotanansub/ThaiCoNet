@@ -48,12 +48,15 @@ import subprocess
 
 def install_packages():
     subprocess.check_call(['pip', 'install', '--upgrade', 'pip'])
+    try: subprocess.check_call(['pip', 'install', 'tltk==1.6', '-q'])
+    except: print("tltk installation error")
     subprocess.check_call(['pip', 'install', '--upgrade', 'setuptools', 'wheel'])
-    subprocess.check_call(['pip', 'install', 'tltk==1.6.8', '-q'])
+    subprocess.check_call(['pip', 'install', 'deepcut==0.7.0.0', '-q'])
     subprocess.check_call(['pip', 'install', 'pythainlp==4.0.2', '-q'])
     subprocess.check_call(['pip', 'install', 'pyvis==0.1.9', '-q'])
     subprocess.check_call(['apt-get', 'install', '-y', 'graphviz', 'libgraphviz-dev', 'pkg-config', '-q'])
     subprocess.check_call(['pip', 'install', 'pygraphviz==1.7', '-q'])
+    print("[thaiconet] required packages installed")
 
 install_packages()
 
@@ -70,7 +73,9 @@ from operator import itemgetter
 from nltk.tokenize import word_tokenize as term_tokenize
 nltk.download('punkt')
 import tltk
-from pythainlp import word_tokenize,  pos_tag
+import deepcut
+from pythainlp import word_tokenize as pythainlp_word_tokenize
+from pythainlp import pos_tag as pythainlp_pos_tag
 from pythainlp.corpus.common import thai_stopwords as pythainlp_stopwords
 
 #Graph Visulazation
@@ -88,7 +93,10 @@ import sys
 import os
 import requests
 
-__is_ipython_kernel__ = lambda: True if 'ipykernel' in sys.modules and __name__ == "__main__" else False
+if __name__ == "__main__" and 'ipykernel' in sys.modules:
+  __is_ipython_kernel__ = True
+else:
+  __is_ipython_kernel__ = False
 
 """Sample Resources prepararion"""
 
@@ -100,9 +108,12 @@ def download_data(url, file_name=None):
     with open(file_name, "wb") as file:
         file.write(response.content)
 
-# if __is_ipython_kernel__:
-#     url = "https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv"
-#     download_data(url=url)
+def notebook_download_sample_data():
+  if __is_ipython_kernel__:
+      url = "https://github.com/ChotanansubSoph/ThNTA/raw/main/resources/sample_data/thai_electronic_news_2022.csv"
+      download_data(url=url)
+
+notebook_download_sample_data()
 
 """### Data Preprocessing"""
 
@@ -136,8 +147,8 @@ def tltk_tokenize_pos(text): #Primaly Tokenizer
 
 
 def pythainlp_tokenize_pos(text): #Secondary Tokenizer
-  wordList= word_tokenize(text, keep_whitespace=False)
-  posList = pos_tag(wordList,corpus='pud')
+  wordList= pythainlp_word_tokenize(text, keep_whitespace=False)
+  posList = pythainlp_pos_tag(wordList)
   return posList
 
 
@@ -174,64 +185,151 @@ def count_word_pos_frequency(data):
     result.sort(key=lambda x: x[2], reverse=True)
     return result
 
-"""### Text preprocess"""
+"""### Text preprocess
+
+Tokenization
+"""
 
 def text_tokenize(text: str,tokenizer="pythainlp") -> list:
-    term_pairs = list()
-    if tokenizer == "tltk":
-      term_pairs = tltk_tokenize_pos(text)
+    term_list = list()
+    if tokenizer == "tltk" or tokenizer == "tltk-colloc":
+      term_list = tltk.nlp.word_segment(text).split("|")
+    elif tokenizer == "tltk-mm" or tokenizer == "tltk-ngram":
+      term_list = tltk.nlp.word_segment(text, method="mm").split("|")
+    elif tokenizer == "tltk-w2v":
+      term_list = tltk.nlp.word_segment(text, method="w2v").split("|")
 
     elif tokenizer == "pythainlp":
-      term_pairs = pythainlp_tokenize_pos(text)
+      term_list = pythainlp_word_tokenize(text)
 
+    elif tokenizer == "deepcut":
+      term_list = deepcut.tokenize(text)
 
-    return term_pairs
+    return term_list
 
+def __test_tokenize__():
+  if __is_ipython_kernel__:
+    sample_text = "ประกาศให้มีการสวมหน้ากากอนามัยตลอดเวลา"
+    print("tltk ",text_tokenize(sample_text,"tltk"))
+    print("tltk-mm ",text_tokenize(sample_text,"tltk-mm"))
+    #print("tltk-w2v ",text_tokenize(sample_text,"tltk-w2v"))
+    print("pythainlp ",text_tokenize(sample_text,"pythainlp"))
+    print("deepcut ",text_tokenize(sample_text,"deepcut"))
 
-def pos_filter(pos_pairs: list, stopwords: set, keep_pos=['NOUN','VERB']):
+__test_tokenize__()
+
+"""POS Tagging"""
+
+def pos_tagging(term_list, pos_tagger):
+  term_pairs = list()
+  if pos_tagger == "tltk" or pos_tagger == "tltk-pos-tagger":
+    term_pairs =  tltk.pos_tag_wordlist(term_list)
+  elif pos_tagger == "pythainlp" or pos_tagger == "pythainlp-pos-tagger":
+    term_pairs = pythainlp_pos_tag(term_list)
+  elif pos_tagger == "pythainlp-pud":
+    term_pairs = pythainlp_pos_tag(term_list,corpus="pud")
+
+  return term_pairs
+
+"""Token Filtering"""
+
+def token_filter(pos_pairs: list, stopwords: set, keep_pos=[]):
   stopwords = []
   regex = re.compile('[@_!#$%^&*()<>?/\|}{~:.]')
-  filtered_pairs = [(term,pos) for term, pos in pos_pairs
-              if pos in keep_pos
-              and term not in stopwords
-              and len(term) > 1
-              and not isEnglish(term)
-              and regex.search(term) is None
-              and "\xa0" not in term]
+
+  if len(keep_pos) > 0:
+    pos_condition = lambda pos: True if pos in keep_pos else False
+  else:
+    pos_condition = lambda pos:True
+
+  if keep_pos == []:
+    filtered_pairs = [(term,pos) for term, pos in pos_pairs
+                if pos_condition(pos)
+                and term not in stopwords
+                and len(term) > 1
+                and not isEnglish(term)
+                and regex.search(term) is None
+                and "\xa0" not in term]
 
   return filtered_pairs
 
+"""Warp-up Token prepairation process"""
 
-def feed_preprocess(docs: list, stopwords = None, tokenizer="pythainlp", keep_pos=None) -> list:
+def feed_preprocess(docs: list, stopwords = None, tokenizer="deepcut",pos_tagger = "tltk",keep_pos=['NOUN','VERB']) -> list:
     preprocessed_docs = []
+
     if stopwords is None:
       stopwords = pythainlp_stopwords()
 
+
     for text in tqdm(docs):
-        pos_pairs = text_tokenize(
-                      text=text,
-                      tokenizer=tokenizer,
-                    )
-        preprocessed_terms = pos_filter(pos_pairs=pos_pairs, stopwords=stopwords)
-        preprocessed_docs.append(preprocessed_terms)
+
+        if tokenizer=="pythainlp" and pos_tagger=="pythainlp":
+          pos_pairs = pythainlp_tokenize_pos(text)
+
+        else:
+          #Tokenization
+          term_list = text_tokenize(
+                        text=text,
+                        tokenizer=tokenizer,
+                      )
+          #POS Tagger
+          pos_pairs = pos_tagging(term_list,pos_tagger)
+
+          #Token Filtering
+          preprocessed_terms = token_filter(pos_pairs = pos_pairs,
+                                          stopwords = stopwords,
+                                          keep_pos = keep_pos
+                                          )
+          preprocessed_docs.append(preprocessed_terms)
+
 
     return preprocessed_docs
 
-"""Tokenization & Term Filtering"""
+"""Tokenization & Token Filtering Demonstration"""
 
-# if __is_ipython_kernel__:
-#   news_df = pd.read_csv("thai_electronic_news_2022.csv")
-#   news_df
+def __sample_load_data__():
+  if __is_ipython_kernel__:
+    global sample_data
+    sample_data = pd.read_csv("thai_electronic_news_2022.csv")
+    display(sample_data)
 
-# if __is_ipython_kernel__:
-#   tokenized_data = feed_preprocess(news_df["content"],tokenizer="pythainlp") #approximate time ~5 min
+__sample_load_data__()
 
-# if __is_ipython_kernel__:
-#   tokenized_data[0][:10] , tokenized_data[1][:10]
+def __sample_feed_process__():
+  if __is_ipython_kernel__:
+    global sample_tokenized_data
+    sample_tokenized_data = feed_preprocess(docs=sample_data["content"],
+                                    tokenizer="pythainlp",
+                                    pos_tagger="tltk-pos-tagger",
+                                    keep_pos=[])
+    #approximate time : pythainlp ~5 min / tltk ~ min
+__sample_feed_process__()
 
-# if __is_ipython_kernel__:
-#   tokenized_freq = count_word_pos_frequency(tokenized_data)
-#   tokenized_freq[:15]
+# import pickle
+# import time
+# from google.colab import files
+# with open('sample_tokenized_data__tltk.pickle', 'wb') as handle:
+#     pickle.dump(tokenized_data, handle)
+# print("dumping completed!")
+# time.sleep(100)
+# files.download("sample_tokenized_data__tltk.pickle")
+# print("download complete!")
+
+def __sample_show_tokenized_data__():
+  if __is_ipython_kernel__:
+    display(sample_tokenized_data[0][:10])
+    display(sample_tokenized_data[1][:10])
+
+__sample_show_tokenized_data__()
+
+def __sample_freq_detection__():
+  if __is_ipython_kernel__:
+    global sample_tokenized_freq
+    sample_tokenized_freq = count_word_pos_frequency(sample_tokenized_data)
+    display(sample_tokenized_freq[:15])
+
+__sample_freq_detection__()
 
 """generate bag of co-occurence terminology"""
 
@@ -265,24 +363,35 @@ def count_triple_frequency(triples):
     result = list(triple_frequency.items())
     return  sorted(result, key=lambda x: x[1], reverse=True)
 
-# if __is_ipython_kernel__:
-#   cooc_data = generate_trigrams(tokenized_data)
-#   cooc_data[:10]
+def __sample_gen_trigrams__():
+  if __is_ipython_kernel__:
+    global sample_cooc_data
+    sample_cooc_data = generate_trigrams(sample_tokenized_data)
+    display(sample_cooc_data[:10])
 
-# if __is_ipython_kernel__:
-#   cooc_freqs = count_triple_frequency(cooc_data)
-#   cooc_freqs[:10]
+__sample_gen_trigrams__()
 
-def filter_pos_triples(data,keeps = [('NOUN','VERB','NOUN')]):
-    filtered_triples = [ pair
-        for pair in data
-        if pair[0][0][1] == 'NOUN' and pair[0][1][1] == 'VERB' and pair[0][2][1] == 'NOUN'
+def __sample_cooc_freqs_detection__():
+  if __is_ipython_kernel__:
+    global sample_cooc_freqs
+    sample_cooc_freqs = count_triple_frequency(sample_cooc_data)
+    display(sample_cooc_freqs[:10])
+
+__sample_cooc_freqs_detection__()
+
+def filter_pos_triples(data,keeps = ('NOUN','VERB','NOUN')):
+    filtered_triples = [ pair for pair in data
+        if pair[0][0][1] == keeps[0] and pair[0][1][1] == keeps[1] and pair[0][2][1] == keeps[2]
     ]
     return filtered_triples
 
-# if __is_ipython_kernel__:
-#   filtered_cooc = filter_pos_triples(cooc_freqs)
-#   filtered_cooc[:20]
+def __sample_filter_pos__():
+  if __is_ipython_kernel__:
+    global sample_filtered_cooc
+    sample_filtered_cooc = filter_pos_triples(sample_cooc_freqs)
+    display(sample_filtered_cooc[:20])
+
+__sample_filter_pos__()
 
 def bgs_filter_extreme(bgs_list, min_percent=0.05, max_percent=0.8):
   result = list()
@@ -338,7 +447,9 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
 
     net.show(file_name)
 
-# if __is_ipython_kernel__:
-#   visualize_cooccurrence(filtered_cooc[100:200])
-#   display(HTML("thaiconet_result.html"))
+def __sample__visualization__():
+  if __is_ipython_kernel__:
+    visualize_cooccurrence(sample_filtered_cooc[:200])
+    display(HTML("thaiconet_result.html"))
 
+__sample__visualization__()
