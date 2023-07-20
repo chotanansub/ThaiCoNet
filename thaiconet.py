@@ -44,21 +44,44 @@ Library & Module Installation
 * If you encounter any errors during the initial execution it may be due to factors such as dependencies or system configurations. To address any encountered errors, simply restart the runtime or kernel. Afterward, run the code cell again to ensure a successful execution.
 """
 
+# Commented out IPython magic to ensure Python compatibility.
 import subprocess
+import sys
+import pip
+from tqdm.notebook import tqdm_notebook as tqdm
 
-def install_packages():
-    subprocess.check_call(['pip', 'install', '--upgrade', 'pip'])
-    try: subprocess.check_call(['pip', 'install', 'tltk==1.6', '-q'])
-    except: print("tltk installation error")
-    subprocess.check_call(['pip', 'install', '--upgrade', 'setuptools', 'wheel'])
-    subprocess.check_call(['pip', 'install', 'deepcut==0.7.0.0', '-q'])
-    subprocess.check_call(['pip', 'install', 'pythainlp==4.0.2', '-q'])
-    subprocess.check_call(['pip', 'install', 'pyvis==0.1.9', '-q'])
-    subprocess.check_call(['apt-get', 'install', '-y', 'graphviz', 'libgraphviz-dev', 'pkg-config', '-q'])
-    subprocess.check_call(['pip', 'install', 'pygraphviz==1.7', '-q'])
-    print("[thaiconet] required packages installed")
+def lib_install(package):
+    if hasattr(pip, 'main'):
+        pip.main(['install', package])
+    else:
+        pip._internal.main(['install', package,'-q'])
+#     %clear
+    print(f"[{package}] re-installed completed")
 
-install_packages()
+
+required_libs = (
+    ['pip', 'install', '--upgrade', 'pip'],
+    ['pip', 'install', '--upgrade', 'setuptools', 'wheel'],
+    ['pip', 'install', 'deepcut==0.7.0.0', '-q'],
+    ['pip', 'install', 'pythainlp==4.0.2', '-q'],
+    ['pip', 'install', 'pyvis==0.1.9', '-q'],
+    ['apt-get', 'install', '-y', 'graphviz', 'libgraphviz-dev', 'pkg-config', '-q'],
+    ['pip', 'install', 'pygraphviz==1.7', '-q'],
+    ['pip', 'install', 'tltk==1.6.8', '-q']
+)
+
+
+def install_packages(lib_lists):
+    for pip_cmd in tqdm(lib_lists):
+      try:
+         subprocess.check_call(pip_cmd)
+      except:
+        print(f"Installed {pip_cmd[-2]} : failed! , trying another method")
+        lib_install(pip_cmd[-2])
+
+    print("[thaiconet] all required packages has completely installed")
+
+install_packages(required_libs)
 
 """Library preparation"""
 
@@ -85,11 +108,10 @@ from pyvis.network import Network
 from IPython.display import display, HTML
 
 #Add-on
-from tqdm.notebook import tqdm_notebook as tqdm
+
 from operator import itemgetter
 from collections import Counter,defaultdict
 import re
-import sys
 import os
 import requests
 
@@ -212,7 +234,7 @@ def __test_tokenize__():
     sample_text = "ประกาศให้มีการสวมหน้ากากอนามัยตลอดเวลา"
     print("tltk ",text_tokenize(sample_text,"tltk"))
     print("tltk-mm ",text_tokenize(sample_text,"tltk-mm"))
-    #print("tltk-w2v ",text_tokenize(sample_text,"tltk-w2v"))
+    print("tltk-w2v ",text_tokenize(sample_text,"tltk-w2v"))
     print("pythainlp ",text_tokenize(sample_text,"pythainlp"))
     print("deepcut ",text_tokenize(sample_text,"deepcut"))
 
@@ -424,27 +446,41 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
         node_degrees[obj] = node_degrees.get(obj, 0) + 1
 
         # Add nodes and set their size based on the degree
-        G.add_node(sbj, size=min(node_degrees[sbj] * 7, 80))
-        G.add_node(obj, size=min(node_degrees[obj] * 7, 80))
+        G.add_node(sbj, size=min(node_degrees[sbj] * 5, 30), node_type = "sbj")
+        G.add_node(obj, size=min(node_degrees[obj] * 5, 30), node_type = "obj")
 
         # Add edge
-        G.add_edge(sbj, obj, weight=freq, label=pred)
+        G.add_edge(sbj, obj, weight=freq, label=pred, sbj_verifier = sbj)
 
-    pos = nx.spring_layout(G)
-    sizes = [G.nodes[n]['size'] for n in G.nodes()]
+    # pos = nx.spring_layout(G)
+    # sizes = [G.nodes[n]['size'] for n in G.nodes()]
 
     # Phase 2: PyviZ
-    net = Network(height="800px", width="100%", notebook=True)
+    net = Network(height="800px",
+                  width="100%",
+                  notebook=True,
+                  directed =True,
+                 )
 
     for node in G.nodes():
         net.add_node(node, size=G.nodes[node]['size'])
 
+
+    display(G.edges(data=True))
+
     for u, v, data in G.edges(data=True):
         weight = data['weight']
         label = data['label']
+        sbj_verifier = data['sbj_verifier']
+
         color = "orange" if weight > 45 else "gray"
+
+        if u != sbj_verifier:
+          u,v = v,u
+
         net.add_edge(u, v, value=weight, color=color, label=label)
 
+    net.show_buttons(filter_=['physics'])
     net.show(file_name)
 
 def __sample__visualization__():
