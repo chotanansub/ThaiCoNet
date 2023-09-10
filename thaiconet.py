@@ -463,9 +463,10 @@ def __sample__show_flat_triple_doc__():
 __sample__show_flat_triple_doc__()
 
 def __sample__show_triple_tfidf_list__():
-  global triple_tfidf_list
-  triple_tfidf_list = calculate_tfidf(flat_triple_doc(sample_cooc_data))
-  display(triple_tfidf_list[0])
+  if __is_ipython_kernel__:
+    global triple_tfidf_list
+    triple_tfidf_list = calculate_tfidf(flat_triple_doc(sample_cooc_data))
+    display(triple_tfidf_list[0])
 
 __sample__show_triple_tfidf_list__()
 
@@ -559,19 +560,20 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
     net.show_buttons(filter_=['physics'])
     net.show(file_name)
 
-stop_words = ['การ']
-selected = []
-for triple in list(sample_filtered_cooc):
-  is_valid = True
-  for pairs in triple[0]:
-    if pairs[0] in stop_words:
-      is_valid = False
-      break
-  if is_valid:
-    selected.append(triple)
-
 def __sample__visualization__():
   if __is_ipython_kernel__:
+
+    stop_words = ['การ']
+    selected = []
+    for triple in list(sample_filtered_cooc):
+      is_valid = True
+      for pairs in triple[0]:
+        if pairs[0] in stop_words:
+          is_valid = False
+          break
+      if is_valid:
+        selected.append(triple)
+
     visualize_cooccurrence(selected[:200])
     display(HTML("thaiconet_result.html"))
 
