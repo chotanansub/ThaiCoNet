@@ -62,7 +62,8 @@ def lib_install(package):
 required_libs = (
     ['pip', 'install', '--upgrade', 'pip'],
     ['pip', 'install', '--upgrade', 'setuptools', 'wheel'],
-     ['pip', 'install', 'tltk==1.6.8', '-q'],
+    ['pip', 'install', 'tltk==1.6.8', '-q'],
+    ['pip', 'install', 'longan','--extra-index-url', 'https://installer:glpat-dDG6MBuvUjUKWymz5uBu@gitlab.com/api/v4/projects/35051317/packages/pypi/simple'],
     ['pip', 'install', 'deepcut==0.7.0.0', '-q'],
     ['pip', 'install', 'pythainlp==4.0.2', '-q'],
     ['pip', 'install', 'pyvis==0.1.9', '-q'],
@@ -82,8 +83,6 @@ def install_packages(lib_lists):
     print("[thaiconet] all required packages has completely installed")
 
 install_packages(required_libs)
-
-!pip install longan --extra-index-url https://installer:glpat-dDG6MBuvUjUKWymz5uBu@gitlab.com/api/v4/projects/35051317/packages/pypi/simple
 
 """Library preparation"""
 
