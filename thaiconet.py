@@ -62,12 +62,12 @@ def lib_install(package):
 required_libs = (
     ['pip', 'install', '--upgrade', 'pip'],
     ['pip', 'install', '--upgrade', 'setuptools', 'wheel'],
+     ['pip', 'install', 'tltk==1.6.8', '-q'],
     ['pip', 'install', 'deepcut==0.7.0.0', '-q'],
     ['pip', 'install', 'pythainlp==4.0.2', '-q'],
     ['pip', 'install', 'pyvis==0.1.9', '-q'],
     ['apt-get', 'install', '-y', 'graphviz', 'libgraphviz-dev', 'pkg-config', '-q'],
     ['pip', 'install', 'pygraphviz==1.7', '-q'],
-    ['pip', 'install', 'tltk==1.6.8', '-q']
 )
 
 
@@ -82,6 +82,8 @@ def install_packages(lib_lists):
     print("[thaiconet] all required packages has completely installed")
 
 install_packages(required_libs)
+
+!pip install longan --extra-index-url https://installer:glpat-dDG6MBuvUjUKWymz5uBu@gitlab.com/api/v4/projects/35051317/packages/pypi/simple
 
 """Library preparation"""
 
@@ -100,6 +102,10 @@ import deepcut
 from pythainlp import word_tokenize as pythainlp_word_tokenize
 from pythainlp import pos_tag as pythainlp_pos_tag
 from pythainlp.corpus.common import thai_stopwords as pythainlp_stopwords
+import longan
+
+from gensim.corpora import Dictionary
+from gensim.models import TfidfModel
 
 #Graph Visulazation
 import networkx as nx
@@ -111,6 +117,7 @@ from IPython.display import display, HTML
 
 from operator import itemgetter
 from collections import Counter,defaultdict
+from itertools import islice
 import re
 import os
 import requests
@@ -163,9 +170,9 @@ def read_stopwords(file_path : str) ->list:
 
 ########## Tokenization ##########
 
-def tltk_tokenize_pos(text): #Primaly Tokenizer
-  result = flatten_nested_list(tltk.nlp.pos_tag(text))
-  return result
+# def tltk_tokenize_pos(text): #Primaly Tokenizer
+#   result = flatten_nested_list(tltk.nlp.pos_tag(text))
+#   return result
 
 
 def pythainlp_tokenize_pos(text): #Secondary Tokenizer
@@ -184,12 +191,12 @@ def TNC_extract_tltk_pos_pairs(result): #Inactivated
 
     return word_pos_pairs
 
-def TNC_tokenize_pos_ner_(text): #Inactivated
-  result = []
-  for partial_text in text.split(" "):
-    partial_text = partial_text.replace(")"," ").replace("("," ")
-    result += tltk.nlp.TNC_tag(partial_text,POS="Y")
-  return tltk.nlp.ner(TNC_extract_tltk_pos_pairs(result))
+# def TNC_tokenize_pos_ner_(text): #Inactivated
+#   result = []
+#   for partial_text in text.split(" "):
+#     partial_text = partial_text.replace(")"," ").replace("("," ")
+#     result += tltk.nlp.TNC_tag(partial_text,POS="Y")
+#   return tltk.nlp.ner(TNC_extract_tltk_pos_pairs(result))
 
 
 ########## Term Frequency ##########
@@ -227,6 +234,9 @@ def text_tokenize(text: str,tokenizer="pythainlp") -> list:
     elif tokenizer == "deepcut":
       term_list = deepcut.tokenize(text)
 
+    elif tokenizer =="longan":
+      term_list = longan.tokenize(text)
+
     return term_list
 
 def __test_tokenize__():
@@ -237,6 +247,7 @@ def __test_tokenize__():
     print("tltk-w2v ",text_tokenize(sample_text,"tltk-w2v"))
     print("pythainlp ",text_tokenize(sample_text,"pythainlp"))
     print("deepcut ",text_tokenize(sample_text,"deepcut"))
+    print("longan ",text_tokenize(sample_text,"longan"))
 
 __test_tokenize__()
 
@@ -250,8 +261,13 @@ def pos_tagging(term_list, pos_tagger):
     term_pairs = pythainlp_pos_tag(term_list)
   elif pos_tagger == "pythainlp-pud":
     term_pairs = pythainlp_pos_tag(term_list,corpus="pud")
+  elif pos_tagger == "longan":
+    pos_list = longan.pos(term_list)
+    term_pairs = list(map(lambda term, pos: (term,pos), term_list, pos_list))
 
   return term_pairs
+
+pos_tagging(['ประกาศ', 'ให้', 'มี', 'การ', 'สวม', 'หน้ากาก', 'อนามัย', 'ตลอด', 'เวลา', '<s/>'],"tltk")
 
 """Token Filtering"""
 
@@ -325,18 +341,8 @@ def __sample_feed_process__():
                                     tokenizer="pythainlp",
                                     pos_tagger="tltk-pos-tagger",
                                     keep_pos=[])
-    #approximate time : pythainlp ~5 min / tltk ~ min
+    #approximate time : pythainlp ~2.17 min / tltk ~ min /longan
 __sample_feed_process__()
-
-# import pickle
-# import time
-# from google.colab import files
-# with open('sample_tokenized_data__tltk.pickle', 'wb') as handle:
-#     pickle.dump(tokenized_data, handle)
-# print("dumping completed!")
-# time.sleep(100)
-# files.download("sample_tokenized_data__tltk.pickle")
-# print("download complete!")
 
 def __sample_show_tokenized_data__():
   if __is_ipython_kernel__:
@@ -344,6 +350,52 @@ def __sample_show_tokenized_data__():
     display(sample_tokenized_data[1][:10])
 
 __sample_show_tokenized_data__()
+
+def flat_pos_list(pos_list):
+  result = list()
+  for doc in pos_list:
+    collect = []
+    for pair in doc:
+      collect.append(pair[0]+"|"+pair[1])
+    result.append(collect)
+  return result
+
+def __sample_show_flated_pos_list__():
+  if __is_ipython_kernel__:
+    global flated_pos_list
+    flated_pos_list = flat_pos_list(sample_tokenized_data[:2])
+    display(flated_pos_list[0][:15])
+
+__sample_show_flated_pos_list__()
+
+def calculate_tfidf(documents):
+    # Create a dictionary from the documents
+    dictionary = Dictionary(documents)
+
+    # Create a bag-of-words representation for the documents
+    corpus = [dictionary.doc2bow(doc) for doc in documents]
+
+    # Create a TF-IDF model from the bag-of-words corpus
+    tfidf_model = TfidfModel(corpus)
+
+    # Compute TF-IDF values for the documents
+    tfidf_values = [tfidf_model[doc] for doc in corpus]
+
+    # Convert TF-IDF values to dictionaries
+    tfidf_list = []
+    for doc in tfidf_values:
+        tfidf_dict = {dictionary[id]: value for id, value in doc}
+        tfidf_list.append(tfidf_dict)
+
+    return tfidf_list
+
+def __sample_show_tfidf_pairs__():
+  if __is_ipython_kernel__:
+    global tfidf_pairs
+    tfidf_pairs = calculate_tfidf(flated_pos_list)
+    display(dict(list(islice(tfidf_pairs[0].items(), 15))))
+
+__sample_show_tfidf_pairs__()
 
 def __sample_freq_detection__():
   if __is_ipython_kernel__:
@@ -373,14 +425,17 @@ def generate_bigram_freq(term_list)->list:
 
 def generate_trigrams(data):
   result = []
-  terms = flatten_nested_list(data)
-  for i in range(len(terms[:-2])):
-    triple = (terms[i],terms[i+1],terms[i+2])
-    result.append(triple)
+  for doc in data:
+    collect=[]
+    for i in range(len(doc[:-2])):
+      triple = (doc[i],doc[i+1],doc[i+2])
+      collect.append(triple)
+    result.append(collect)
   return result
 
 
-def count_triple_frequency(triples):
+def count_triple_frequency(docs):
+    triples = [word for sublist in docs for word in sublist]
     triple_frequency = Counter(triples)
     result = list(triple_frequency.items())
     return  sorted(result, key=lambda x: x[1], reverse=True)
@@ -389,9 +444,31 @@ def __sample_gen_trigrams__():
   if __is_ipython_kernel__:
     global sample_cooc_data
     sample_cooc_data = generate_trigrams(sample_tokenized_data)
-    display(sample_cooc_data[:10])
+    display(sample_cooc_data[0][:20])
 
 __sample_gen_trigrams__()
+
+def flat_triple_doc(triple_docs):
+  result=[]
+  for doc in triple_docs:
+    collect = []
+    for triple in doc:
+      collect.append('|'.join([f'{token}|{pos}' for token, pos in triple]))
+    result.append(collect)
+  return result
+
+def __sample__show_flat_triple_doc__():
+  if __is_ipython_kernel__:
+   display(flat_triple_doc(sample_cooc_data[:1])[0][:15])
+
+__sample__show_flat_triple_doc__()
+
+def __sample__show_triple_tfidf_list__():
+  global triple_tfidf_list
+  triple_tfidf_list = calculate_tfidf(flat_triple_doc(sample_cooc_data))
+  display(triple_tfidf_list[0])
+
+__sample__show_triple_tfidf_list__()
 
 def __sample_cooc_freqs_detection__():
   if __is_ipython_kernel__:
@@ -483,9 +560,21 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
     net.show_buttons(filter_=['physics'])
     net.show(file_name)
 
+stop_words = ['การ']
+selected = []
+for triple in list(sample_filtered_cooc):
+  is_valid = True
+  for pairs in triple[0]:
+    if pairs[0] in stop_words:
+      is_valid = False
+      break
+  if is_valid:
+    selected.append(triple)
+
 def __sample__visualization__():
   if __is_ipython_kernel__:
-    visualize_cooccurrence(sample_filtered_cooc[:200])
+    visualize_cooccurrence(selected[:200])
     display(HTML("thaiconet_result.html"))
 
 __sample__visualization__()
+
