@@ -50,6 +50,8 @@ import sys
 import pip
 from tqdm.notebook import tqdm_notebook as tqdm
 
+
+
 def lib_install(package):
     if hasattr(pip, 'main'):
         pip.main(['install', package])
@@ -72,17 +74,22 @@ required_libs = (
 )
 
 
-def install_packages(lib_lists):
+def install_colab_packages(lib_lists):
     for pip_cmd in tqdm(lib_lists):
       try:
          subprocess.check_call(pip_cmd)
       except:
-        print(f"Installed {pip_cmd[-2]} : failed! , trying another method")
-        lib_install(pip_cmd[-2])
+        print(f"[thaiconet] Module '{pip_cmd[-2]}' : intellation failed!\nplease reconnection and try again")
+        from google.colab import runtime
+        runtime.unassign()
 
     print("[thaiconet] all required packages has completely installed")
 
-install_packages(required_libs)
+def setup(notebook = "colab"):
+    if notebook == "colab":
+        install_colab_packages(required_libs)
+
+setup()
 
 """Library preparation"""
 
