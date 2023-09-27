@@ -82,12 +82,49 @@ def install_colab_packages(lib_dicts,excepts=[]):
       except:
         print(f"\n{'-'*70}\n{str_color('[ThaiCoNet]', 'yellow')} {lib} : ⚠️ {str_color('intellation failed!', 'red')}\n🔄 please reconnection and try again\n{'-'*70}")
         runtime.unassign()
-
     print(f'\n{"-"*70}\n{str_color("[ThaiCoNet]", "yellow")} All required packages {str_color("have completely installed", "green")} ✅ \n{"-"*70}')
 
 def setup(notebook = "colab", excepts=[]):
     if notebook == "colab":
         install_colab_packages(REQUIRED_MODULES,excepts)
+
+        #Data manipulation
+        import pandas as pd
+        import numpy as np
+
+        #NLP
+        import nltk
+        from nltk import FreqDist, bigrams
+        from nltk.tokenize import word_tokenize as term_tokenize
+        nltk.download('punkt')
+
+        if 'tltk' not in excepts:
+          import tltk
+        elif 'pythainlp' not in excepts:
+          from pythainlp import word_tokenize as pythainlp_word_tokenize
+          from pythainlp import pos_tag as pythainlp_pos_tag
+          from pythainlp.corpus.common import thai_stopwords as pythainlp_stopwords
+        elif 'longan' not in excepts:
+          import longan
+        elif 'deepcut' not in excepts:
+          import deepcut
+
+        from gensim.corpora import Dictionary
+        from gensim.models import TfidfModel
+
+        #Graph Visulazation
+        import networkx as nx
+        import matplotlib.pyplot as plt
+        from pyvis.network import Network
+        from IPython.display import display, HTML
+
+        #Add-on
+        from operator import itemgetter
+        from collections import Counter,defaultdict
+        from itertools import islice
+        import re
+        import os
+        import requests
 
 
 if __name__ == "__main__" and 'ipykernel' in sys.modules:
@@ -100,43 +137,6 @@ def __sample_setup__():
     setup()
 
 __sample_setup__()
-
-"""Library preparation"""
-
-#Data manipulation
-import pandas as pd
-import numpy as np
-
-#NLP
-import nltk
-from nltk import FreqDist, bigrams
-from operator import itemgetter
-from nltk.tokenize import word_tokenize as term_tokenize
-nltk.download('punkt')
-import tltk
-import deepcut
-from pythainlp import word_tokenize as pythainlp_word_tokenize
-from pythainlp import pos_tag as pythainlp_pos_tag
-from pythainlp.corpus.common import thai_stopwords as pythainlp_stopwords
-import longan
-
-from gensim.corpora import Dictionary
-from gensim.models import TfidfModel
-
-#Graph Visulazation
-import networkx as nx
-import matplotlib.pyplot as plt
-from pyvis.network import Network
-from IPython.display import display, HTML
-
-#Add-on
-
-from operator import itemgetter
-from collections import Counter,defaultdict
-from itertools import islice
-import re
-import os
-import requests
 
 """Sample Resources prepararion"""
 
