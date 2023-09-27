@@ -10,86 +10,96 @@ Original file is located at
 
 ### 💡 About this notebook
 
+🚧 pipeline_version : ```beta 0.0.6```
+
 **[Access Project Repository (Github)](https://github.com/ChotanansubSoph/ThNTA)**
 
-🧑🏻‍💻 **Notebook Contributor**
+##### 🧑🏻‍💻 **Notebook Contributor**
 
 
-*   Chotanansub Sophaken
-*   Kantapong Vongpanich
+*   Chotanansub Sophaken, [Github](https://github.com/ChotanansubSoph)
+*   Kantapong Vongpanich, [Github](https://github.com/OnlyJust3rd)
 
-**Department of Computer Eningeering, Engineering Faculty**
+  > 🏢 Department of Computer Eningeering, King Mongkut’s University of Technology Thonburi (KMUTT)
 
-*King Mongkut’s University of Technology Thonburi (KMUTT)*
-
-*Junior Science Talent Project and Siam Commercial Bank Scholarship (JSTP-SCB Scholarship)*
+  > 🌱 Junior Science Talent Project by Siam Commercial Bank Scholarship (JSTP-SCB Scholarship)
 
 ---
 
-Approach reference:
+##### **📚 Approach Based**
 
 * *A. Takhom, D. Leenoi, C. Sophaken, P. Boonkwan, and T. Supnithi, “An Approach of Network Analysis Enhancing Knowledge Extraction in Thai Newspapers Contexts,” J. Intell. Informatics Smart Technol., vol. 6, no. October 2021, pp. 19–24, 2021 [Acess](https://jiist.aiat.or.th/assets/uploads/1635853027829tBupD1635602106085fdegH39.pdf)*
 
 * Sophaken, C., Vongpanich, K., Takhom, A., Boonkwan, P., & Supnithi, T. (2023). Unsupervised Detection of Domain Switching in Thai Multidisciplinary Online News. IIAI Letters on Informatics and Interdisciplinary Research, 3. [Access](https://iaiai.org/letters/index.php/liir/article/view/77/50)
 
-🎓 Acknowledgement
-* Dr. Akkharawoot TakhomDepartment of Electrical and Computer Engineering
+---
+
+#### **🎓 Acknowledgement**
+* Akkharawoot Takhom, PhD.
+  
+  > 🏢 Department of Electrical and Computer Engineering,
 Thammasat University
+---
 
 ### ⚙️ Tools & Resorces Preparation
 
 Library & Module Installation
 
-* Run the code once.
-* If you encounter any errors during the initial execution it may be due to factors such as dependencies or system configurations. To address any encountered errors, simply restart the runtime or kernel. Afterward, run the code cell again to ensure a successful execution.
+* 🏃 Run the code once.
+* ⚠️ If you encounter any errors during the initial execution it may be due to factors such as dependencies or system configurations. To address any encountered errors, simply restart the runtime or kernel. Afterward, run the code cell again to ensure a successful execution.
 """
 
-# Commented out IPython magic to ensure Python compatibility.
 import subprocess
 import sys
 import pip
+
+from google.colab import runtime
 from tqdm.notebook import tqdm_notebook as tqdm
 
 
+REQUIRED_MODULES = {
+    'upgrade-pip' : ['pip', 'install', '--upgrade', 'pip'],
+    'wheel' : ['pip', 'install', '--upgrade', 'setuptools', 'wheel'],
+    'tltk' : ['pip', 'install', 'tltk==1.6.8', '-q'],
+    'longan' : ['pip', 'install', 'longan','--extra-index-url', 'https://installer:glpat-dDG6MBuvUjUKWymz5uBu@gitlab.com/api/v4/projects/35051317/packages/pypi/simple'],
+    'deepcut' : ['pip', 'install', 'deepcut==0.7.0.0', '-q'],
+    'pythainlp' : ['pip', 'install', 'pythainlp==4.0.2', '-q'],
+    'pyvis' : ['pip', 'install', 'pyvis==0.1.9', '-q'],
+    'graphviz' : ['apt-get', 'install', '-y', 'graphviz', 'libgraphviz-dev', 'pkg-config', '-q'],
+    'pygraphviz' : ['pip', 'install', 'pygraphviz==1.7', '-q'],
+}
 
-def lib_install(package):
-    if hasattr(pip, 'main'):
-        pip.main(['install', package])
-    else:
-        pip._internal.main(['install', package,'-q'])
-#     %clear
-    print(f"[{package}] re-installed completed")
+def str_color(text, color):
+    colors = {'black': '\033[30m','red': '\033[31m', 'green': '\033[32m','yellow': '\033[33m','blue': '\033[34m', 'purple': '\033[35m','cyan': '\033[36m','white': '\033[37m', 'reset': '\033[0m'}
+    return f"{colors[color]}{text}{colors['reset']}"
 
-
-required_libs = (
-    ['pip', 'install', '--upgrade', 'pip'],
-    ['pip', 'install', '--upgrade', 'setuptools', 'wheel'],
-    ['pip', 'install', 'tltk==1.6.8', '-q'],
-    ['pip', 'install', 'longan','--extra-index-url', 'https://installer:glpat-dDG6MBuvUjUKWymz5uBu@gitlab.com/api/v4/projects/35051317/packages/pypi/simple'],
-    ['pip', 'install', 'deepcut==0.7.0.0', '-q'],
-    ['pip', 'install', 'pythainlp==4.0.2', '-q'],
-    ['pip', 'install', 'pyvis==0.1.9', '-q'],
-    ['apt-get', 'install', '-y', 'graphviz', 'libgraphviz-dev', 'pkg-config', '-q'],
-    ['pip', 'install', 'pygraphviz==1.7', '-q'],
-)
-
-
-def install_colab_packages(lib_lists):
-    for pip_cmd in tqdm(lib_lists):
+def install_colab_packages(lib_dicts,excepts=[]):
+    lib_lists  = [lib for lib in list(lib_dicts.keys()) if lib not in excepts]
+    for lib in tqdm(lib_lists):
       try:
-         subprocess.check_call(pip_cmd)
+         subprocess.check_call(REQUIRED_MODULES[lib])
+         print(f'{str_color("[ThaiCoNet]","yellow")} {lib} : {str_color("Installed","green")} ☑️ ')
       except:
-        print(f"[thaiconet] Module '{pip_cmd[-2]}' : intellation failed!\nplease reconnection and try again")
-        from google.colab import runtime
+        print(f"\n{'-'*70}\n{str_color('[ThaiCoNet]', 'yellow')} {lib} : ⚠️ {str_color('intellation failed!', 'red')}\n🔄 please reconnection and try again\n{'-'*70}")
         runtime.unassign()
 
-    print("[thaiconet] all required packages has completely installed")
+    print(f'\n{"-"*70}\n{str_color("[ThaiCoNet]", "yellow")} All required packages {str_color("have completely installed", "green")} ✅ \n{"-"*70}')
 
-def setup(notebook = "colab"):
+def setup(notebook = "colab", excepts=[]):
     if notebook == "colab":
-        install_colab_packages(required_libs)
+        install_colab_packages(REQUIRED_MODULES,excepts)
 
-setup()
+
+if __name__ == "__main__" and 'ipykernel' in sys.modules:
+  __is_ipython_kernel__ = True
+else:
+  __is_ipython_kernel__ = False
+
+def __sample_setup__():
+  if __is_ipython_kernel__:
+    setup()
+
+__sample_setup__()
 
 """Library preparation"""
 
@@ -128,11 +138,6 @@ import re
 import os
 import requests
 
-if __name__ == "__main__" and 'ipykernel' in sys.modules:
-  __is_ipython_kernel__ = True
-else:
-  __is_ipython_kernel__ = False
-
 """Sample Resources prepararion"""
 
 #sample data
@@ -150,7 +155,7 @@ def notebook_download_sample_data():
 
 notebook_download_sample_data()
 
-"""### Data Preprocessing"""
+"""### 🤖 Methods"""
 
 ########## String operation ##########
 def isEnglish(s):
@@ -175,10 +180,6 @@ def read_stopwords(file_path : str) ->list:
   return stopwords
 
 ########## Tokenization ##########
-
-# def tltk_tokenize_pos(text): #Primaly Tokenizer
-#   result = flatten_nested_list(tltk.nlp.pos_tag(text))
-#   return result
 
 
 def pythainlp_tokenize_pos(text): #Secondary Tokenizer
@@ -220,7 +221,7 @@ def count_word_pos_frequency(data):
     result.sort(key=lambda x: x[2], reverse=True)
     return result
 
-"""### Text preprocess
+"""### 📝 Text preprocess
 
 Tokenization
 """
@@ -286,25 +287,24 @@ def token_filter(pos_pairs: list, stopwords: set, keep_pos=[]):
   else:
     pos_condition = lambda pos:True
 
-  if keep_pos == []:
-    filtered_pairs = [(term,pos) for term, pos in pos_pairs
-                if pos_condition(pos)
-                and term not in stopwords
-                and len(term) > 1
-                and not isEnglish(term)
-                and regex.search(term) is None
-                and "\xa0" not in term]
+
+  filtered_pairs = [(term,pos) for term, pos in pos_pairs
+              if pos_condition(pos)
+              and term not in stopwords
+              and len(term) > 1
+              and not isEnglish(term)
+              and regex.search(term) is None
+              and "\xa0" not in term]
 
   return filtered_pairs
 
 """Warp-up Token prepairation process"""
 
-def feed_preprocess(docs: list, stopwords = None, tokenizer="deepcut",pos_tagger = "tltk",keep_pos=['NOUN','VERB']) -> list:
+def feed_preprocess(docs: list, stopwords = None, tokenizer="deepcut",pos_tagger = "tltk",keep_pos=['NOUN','VERB'], is_filter = True) -> list:
     preprocessed_docs = []
 
     if stopwords is None:
       stopwords = pythainlp_stopwords()
-
 
     for text in tqdm(docs):
 
@@ -317,16 +317,17 @@ def feed_preprocess(docs: list, stopwords = None, tokenizer="deepcut",pos_tagger
                         text=text,
                         tokenizer=tokenizer,
                       )
+
           #POS Tagger
           pos_pairs = pos_tagging(term_list,pos_tagger)
 
           #Token Filtering
-          preprocessed_terms = token_filter(pos_pairs = pos_pairs,
-                                          stopwords = stopwords,
-                                          keep_pos = keep_pos
-                                          )
+          if is_filter:
+            preprocessed_terms = token_filter(pos_pairs = pos_pairs,
+                                            stopwords = stopwords,
+                                            keep_pos = keep_pos
+                                            )
           preprocessed_docs.append(preprocessed_terms)
-
 
     return preprocessed_docs
 
@@ -509,7 +510,7 @@ def bgs_filter_extreme(bgs_list, min_percent=0.05, max_percent=0.8):
   result = [(pair, count) for pair, count in bgs_list if min_freq <= count <= max_freq and pair[0] != pair[1]]
   return result
 
-"""## Visualization"""
+"""## 🔮 Visualization"""
 
 def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
     # Phase 1: NetworkX
@@ -540,7 +541,7 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
     # sizes = [G.nodes[n]['size'] for n in G.nodes()]
 
     # Phase 2: PyviZ
-    net = Network(height="800px",
+    net = Network(height="1000px",
                   width="100%",
                   notebook=True,
                   directed =True,
@@ -550,7 +551,7 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
         net.add_node(node, size=G.nodes[node]['size'])
 
 
-    display(G.edges(data=True))
+    #display(G.edges(data=True))
 
     for u, v, data in G.edges(data=True):
         weight = data['weight']
@@ -570,12 +571,13 @@ def visualize_cooccurrence(data, file_name="thaiconet_result.html"):
 def __sample__visualization__():
   if __is_ipython_kernel__:
 
-    stop_words = ['การ']
+    custom_stop_words = ['การ']
     selected = []
     for triple in list(sample_filtered_cooc):
+
       is_valid = True
       for pairs in triple[0]:
-        if pairs[0] in stop_words:
+        if pairs[0] in custom_stop_words:
           is_valid = False
           break
       if is_valid:
@@ -585,4 +587,3 @@ def __sample__visualization__():
     display(HTML("thaiconet_result.html"))
 
 __sample__visualization__()
-
