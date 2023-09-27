@@ -274,7 +274,10 @@ def pos_tagging(term_list, pos_tagger):
 
   return term_pairs
 
-pos_tagging(['ประกาศ', 'ให้', 'มี', 'การ', 'สวม', 'หน้ากาก', 'อนามัย', 'ตลอด', 'เวลา', '<s/>'],"tltk")
+def __sample_pos_tagging__():
+    if __is_ipython_kernel__:
+      print(pos_tagging(['ประกาศ', 'ให้', 'มี', 'การ', 'สวม', 'หน้ากาก', 'อนามัย', 'ตลอด', 'เวลา', '<s/>'],"tltk"))
+__sample_pos_tagging__()
 
 """Token Filtering"""
 
