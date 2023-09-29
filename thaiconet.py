@@ -284,8 +284,8 @@ def pos_tagging(term_list, pos_tagger):
   return term_pairs
 
 def __sample_pos_tagging__():
-    print("POS Tagging Test\n","-"*60)
     if __is_ipython_kernel__:
+      print("POS Tagging Test\n","-"*60)
       print(pos_tagging(['ประกาศ', 'ให้', 'มี', 'การ', 'สวม', 'หน้ากาก', 'อนามัย', 'ตลอด', 'เวลา', '<s/>'],"tltk"))
 __sample_pos_tagging__()
 
