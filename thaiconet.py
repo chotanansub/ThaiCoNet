@@ -78,53 +78,62 @@ def install_colab_packages(lib_dicts,excepts=[]):
     for lib in tqdm(lib_lists):
       try:
          subprocess.check_call(REQUIRED_MODULES[lib])
-         print(f'{str_color("[ThaiCoNet]","yellow")} {lib} : {str_color("Installed","green")} ☑️ ')
+         print(f'{str_color("[ThaiCoNet]","yellow")} {lib} : {str_color("Downloaded","green")} ☑️ ')
       except:
-        print(f"\n{'-'*70}\n{str_color('[ThaiCoNet]', 'yellow')} {lib} : ⚠️ {str_color('intellation failed!', 'red')}\n🔄 please reconnection and try again\n{'-'*70}")
+        print(f"\n{'-'*70}\n{str_color('[ThaiCoNet]', 'yellow')} {lib} : ⚠️ {str_color('failed to download!', 'red')}\n🔄 please reconnection and try again\n{'-'*70}")
+        print('\n')
         runtime.unassign()
-    print(f'\n{"-"*70}\n{str_color("[ThaiCoNet]", "yellow")} All required packages {str_color("have completely installed", "green")} ✅ \n{"-"*70}')
 
 def setup(notebook = "colab", excepts=[]):
     if notebook == "colab":
         install_colab_packages(REQUIRED_MODULES,excepts)
 
-        #Data manipulation
-        import pandas as pd
-        import numpy as np
+    #Data manipulation
+    global pd,np
+    import pandas as pd
+    import numpy as np
 
-        #NLP
-        import nltk
-        from nltk import FreqDist, bigrams
-        from nltk.tokenize import word_tokenize as term_tokenize
-        nltk.download('punkt')
+    #NLP
+    global nltk,tltk,longan,deepcut
+    global FreqDist,bigrams,term_tokenize
+    global pythainlp_word_tokenize, pythainlp_pos_tag, pythainlp_stopwords
+    global Dictionary, TfidfModel
+    import nltk
+    from nltk import FreqDist, bigrams
+    from nltk.tokenize import word_tokenize as term_tokenize
+    nltk.download('punkt')
 
-        if 'tltk' not in excepts:
-          import tltk
-        elif 'pythainlp' not in excepts:
-          from pythainlp import word_tokenize as pythainlp_word_tokenize
-          from pythainlp import pos_tag as pythainlp_pos_tag
-          from pythainlp.corpus.common import thai_stopwords as pythainlp_stopwords
-        elif 'longan' not in excepts:
-          import longan
-        elif 'deepcut' not in excepts:
-          import deepcut
+    if 'tltk' not in excepts:
+      import tltk
+    if 'pythainlp' not in excepts:
+      from pythainlp import word_tokenize as pythainlp_word_tokenize
+      from pythainlp import pos_tag as pythainlp_pos_tag
+      from pythainlp.corpus.common import thai_stopwords as pythainlp_stopwords
+    if 'longan' not in excepts:
+      import longan
+    if 'deepcut' not in excepts:
+      import deepcut
 
-        from gensim.corpora import Dictionary
-        from gensim.models import TfidfModel
+    from gensim.corpora import Dictionary
+    from gensim.models import TfidfModel
 
-        #Graph Visulazation
-        import networkx as nx
-        import matplotlib.pyplot as plt
-        from pyvis.network import Network
-        from IPython.display import display, HTML
+    #Graph Visulazation
+    global nx, plt, Network, display, HTML
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    from pyvis.network import Network
+    from IPython.display import display, HTML
 
-        #Add-on
-        from operator import itemgetter
-        from collections import Counter,defaultdict
-        from itertools import islice
-        import re
-        import os
-        import requests
+    #Add-on
+    global itemgetter, Counter, defaultdict, islic, re, os, requests
+    from operator import itemgetter
+    from collections import Counter,defaultdict
+    from itertools import islice
+    import re
+    import os
+    import requests
+
+    print(f'\n{"-"*70}\n{str_color("[ThaiCoNet]", "yellow")} All required packages {str_color("have completely installed", "green")} ✅ \n{"-"*70}')
 
 
 if __name__ == "__main__" and 'ipykernel' in sys.modules:
@@ -135,6 +144,7 @@ else:
 def __sample_setup__():
   if __is_ipython_kernel__:
     setup()
+    import requests
 
 __sample_setup__()
 
@@ -180,8 +190,6 @@ def read_stopwords(file_path : str) ->list:
   return stopwords
 
 ########## Tokenization ##########
-
-
 def pythainlp_tokenize_pos(text): #Secondary Tokenizer
   wordList= pythainlp_word_tokenize(text, keep_whitespace=False)
   posList = pythainlp_pos_tag(wordList)
@@ -235,7 +243,7 @@ def text_tokenize(text: str,tokenizer="pythainlp") -> list:
     elif tokenizer == "tltk-w2v":
       term_list = tltk.nlp.word_segment(text, method="w2v").split("|")
 
-    elif tokenizer == "pythainlp":
+    elif tokenizer == "pythainlp" or tokenizer == "newmm":
       term_list = pythainlp_word_tokenize(text)
 
     elif tokenizer == "deepcut":
@@ -249,10 +257,11 @@ def text_tokenize(text: str,tokenizer="pythainlp") -> list:
 def __test_tokenize__():
   if __is_ipython_kernel__:
     sample_text = "ประกาศให้มีการสวมหน้ากากอนามัยตลอดเวลา"
+    print("Tokenizer Test\n","-"*60)
     print("tltk ",text_tokenize(sample_text,"tltk"))
     print("tltk-mm ",text_tokenize(sample_text,"tltk-mm"))
     print("tltk-w2v ",text_tokenize(sample_text,"tltk-w2v"))
-    print("pythainlp ",text_tokenize(sample_text,"pythainlp"))
+    print("pythainlp (newmm) ",text_tokenize(sample_text,"pythainlp"))
     print("deepcut ",text_tokenize(sample_text,"deepcut"))
     print("longan ",text_tokenize(sample_text,"longan"))
 
@@ -275,6 +284,7 @@ def pos_tagging(term_list, pos_tagger):
   return term_pairs
 
 def __sample_pos_tagging__():
+    print("POS Tagging Test\n","-"*60)
     if __is_ipython_kernel__:
       print(pos_tagging(['ประกาศ', 'ให้', 'มี', 'การ', 'สวม', 'หน้ากาก', 'อนามัย', 'ตลอด', 'เวลา', '<s/>'],"tltk"))
 __sample_pos_tagging__()
@@ -303,7 +313,7 @@ def token_filter(pos_pairs: list, stopwords: set, keep_pos=[]):
 
 """Warp-up Token prepairation process"""
 
-def feed_preprocess(docs: list, stopwords = None, tokenizer="deepcut",pos_tagger = "tltk",keep_pos=['NOUN','VERB'], is_filter = True) -> list:
+def feed_preprocess(docs: list, stopwords = None, tokenizer="deepcut",pos_tagger = "tltk",keep_pos=['NOUN','VERB'], is_filter = True, is_pos = True, is_tokenize=True) -> list:
     preprocessed_docs = []
 
     if stopwords is None:
@@ -315,21 +325,28 @@ def feed_preprocess(docs: list, stopwords = None, tokenizer="deepcut",pos_tagger
           pos_pairs = pythainlp_tokenize_pos(text)
 
         else:
+
           #Tokenization
-          term_list = text_tokenize(
-                        text=text,
-                        tokenizer=tokenizer,
-                      )
+          term_list = text
+          if is_tokenize:
+            term_list = text_tokenize(
+                          text=term_list,
+                          tokenizer=tokenizer,
+                        )
 
           #POS Tagger
-          pos_pairs = pos_tagging(term_list,pos_tagger)
+          pos_pairs = term_list
+          if is_pos:
+            pos_pairs = pos_tagging(pos_pairs,pos_tagger)
 
           #Token Filtering
+          preprocessed_terms = pos_pairs
           if is_filter:
-            preprocessed_terms = token_filter(pos_pairs = pos_pairs,
+            preprocessed_terms = token_filter(pos_pairs = preprocessed_terms,
                                             stopwords = stopwords,
                                             keep_pos = keep_pos
                                             )
+
           preprocessed_docs.append(preprocessed_terms)
 
     return preprocessed_docs
